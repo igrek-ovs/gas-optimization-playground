@@ -269,7 +269,9 @@ Gas optimization should be applied selectively, based on actual usage patterns.
 
 ## Future Improvements
 
-- Add percentage-based gas savings summary
-- Document optimization rationale at EVM/storage-slot level
-- Extend benchmarks with calldata vs memory comparisons
-- Add more complex storage patterns and access scenarios
+Possible extensions of this playground include:
+
+- Summarizing gas savings in percentage terms across implementations
+- Documenting optimization decisions at the EVM and storage-slot level
+- Extending benchmarks to compare calldata vs memory usage
+- Exploring more complex storage layouts and access patterns
