@@ -1,6 +1,5 @@
 import { expect } from "chai";
 import { network } from "hardhat";
-import { Contract } from "ethers";
 
 describe("UserRegistry Gas Comparison", function () {
   async function deploy() {
@@ -20,56 +19,67 @@ describe("UserRegistry Gas Comparison", function () {
     const medium = await MediumFactory.deploy();
     await medium.waitForDeployment();
 
-    return { ethers, deployer, user, naive, medium };
+    const OptimizedFactory = await ethers.getContractFactory("OptimizedUserRegistry");
+    const optimized = await OptimizedFactory.deploy();
+    await optimized.waitForDeployment();
+
+    return { ethers, deployer, user, naive, medium, optimized };
   }
 
   it("addUser gas comparison", async function () {
-    const { user, naive, medium } = await deploy();
+    const { ethers, user, naive, medium, optimized } = await deploy();
 
-    const txNaive = await naive.addUser(user.address, "Alice");
-    const receiptNaive = await txNaive.wait();
+    const nameString = "Alice";
+    const nameBytes32 = ethers.encodeBytes32String(nameString);
 
-    const txMedium = await medium.addUser(user.address, "Alice");
-    const receiptMedium = await txMedium.wait();
+    const r1 = await (await naive.addUser(user.address, nameString)).wait();
+    const r2 = await (await medium.addUser(user.address, nameString)).wait();
+    const r3 = await (await optimized.addUser(user.address, nameBytes32)).wait();
 
     console.log("\naddUser gas");
-    console.log("NaiveUserRegistry :", receiptNaive?.gasUsed.toString());
-    console.log("MediumUserRegistry:", receiptMedium?.gasUsed.toString());
+    console.log("Naive     :", r1!.gasUsed.toString());
+    console.log("Medium    :", r2!.gasUsed.toString());
+    console.log("Optimized :", r3!.gasUsed.toString());
 
-    expect(receiptMedium?.gasUsed).to.be.lt(receiptNaive?.gasUsed);
+    expect(r3!.gasUsed).to.be.lt(r2!.gasUsed);
+    expect(r2!.gasUsed).to.be.lt(r1!.gasUsed);
   });
 
   it("incrementActions gas comparison", async function () {
-    const { user, naive, medium } = await deploy();
+    const { ethers, user, naive, medium, optimized } = await deploy();
+
+    const name = ethers.encodeBytes32String("Alice");
 
     await naive.addUser(user.address, "Alice");
     await medium.addUser(user.address, "Alice");
+    await optimized.addUser(user.address, name);
 
-    const txNaive = await naive.incrementActions(user.address);
-    const receiptNaive = await txNaive.wait();
-
-    const txMedium = await medium.incrementActions(user.address);
-    const receiptMedium = await txMedium.wait();
+    const r1 = await (await naive.incrementActions(user.address)).wait();
+    const r2 = await (await medium.incrementActions(user.address)).wait();
+    const r3 = await (await optimized.incrementActions(user.address)).wait();
 
     console.log("\nincrementActions gas");
-    console.log("NaiveUserRegistry :", receiptNaive?.gasUsed.toString());
-    console.log("MediumUserRegistry:", receiptMedium?.gasUsed.toString());
+    console.log("Naive     :", r1!.gasUsed.toString());
+    console.log("Medium    :", r2!.gasUsed.toString());
+    console.log("Optimized :", r3!.gasUsed.toString());
   });
 
   it("deactivateUser gas comparison", async function () {
-    const { user, naive, medium } = await deploy();
+    const { ethers, user, naive, medium, optimized } = await deploy();
+
+    const name = ethers.encodeBytes32String("Alice");
 
     await naive.addUser(user.address, "Alice");
     await medium.addUser(user.address, "Alice");
+    await optimized.addUser(user.address, name);
 
-    const txNaive = await naive.deactivateUser(user.address);
-    const receiptNaive = await txNaive.wait();
-
-    const txMedium = await medium.deactivateUser(user.address);
-    const receiptMedium = await txMedium.wait();
+    const r1 = await (await naive.deactivateUser(user.address)).wait();
+    const r2 = await (await medium.deactivateUser(user.address)).wait();
+    const r3 = await (await optimized.deactivateUser(user.address)).wait();
 
     console.log("\ndeactivateUser gas");
-    console.log("NaiveUserRegistry :", receiptNaive?.gasUsed.toString());
-    console.log("MediumUserRegistry:", receiptMedium?.gasUsed.toString());
+    console.log("Naive     :", r1!.gasUsed.toString());
+    console.log("Medium    :", r2!.gasUsed.toString());
+    console.log("Optimized :", r3!.gasUsed.toString());
   });
 });
